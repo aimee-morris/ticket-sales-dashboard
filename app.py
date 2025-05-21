@@ -34,7 +34,7 @@ def extract_metrics_from_pdf(pdf, filename):
         data["Cost per Ticket"] = None
         data["Current Spend"] = None
         data["Target Report Date"] = None
-        data["Target Tickets"] = None
+        data["Target Capacity (%)"] = None
 
     except Exception as e:
         st.error(f"Error parsing {filename}: {e}")
@@ -64,19 +64,20 @@ if uploaded_files:
 
         cost_per_ticket = st.number_input("Cost per Ticket (£)", min_value=0.0, value=5.0)
         current_spend = st.number_input("Current Spend (£)", min_value=0.0, value=0.0)
-        target_tickets = st.number_input("Target Total Tickets", min_value=0, value=1000)
+        target_capacity_pct = st.number_input("Target Capacity (%)", min_value=0.0, max_value=100.0, value=80.0)
         target_date = st.date_input("Target Report Date", min_value=datetime.today())
 
         submitted = st.form_submit_button("Apply Target Info")
         if submitted:
             df.at[selected_index, "Cost per Ticket"] = cost_per_ticket
             df.at[selected_index, "Current Spend"] = current_spend
-            df.at[selected_index, "Target Tickets"] = target_tickets
+            df.at[selected_index, "Target Capacity (%)"] = target_capacity_pct
             df.at[selected_index, "Target Report Date"] = pd.to_datetime(target_date)
 
     # Compute weekly ticket and budget needs
     today = pd.to_datetime(datetime.today())
     df["Target Report Date"] = pd.to_datetime(df["Target Report Date"], errors="coerce")
+    df["Target Tickets"] = (df["Target Capacity (%)"] / 100 * df["Venue Capacity"]).round(0)
     df["Remaining Tickets"] = df["Target Tickets"] - df["Cumulative Sold Tickets"]
     df["Days Remaining"] = (df["Target Report Date"] - today).dt.days
     df["Weeks Remaining"] = (df["Days Remaining"] / 7).round(1)
@@ -85,8 +86,8 @@ if uploaded_files:
 
     st.markdown("### 📈 Target Calculations")
     st.dataframe(df[[
-        "SHOW", "Cumulative Sold Tickets", "Venue Capacity", "Capacity Reached (%)",
-        "Target Tickets", "Target Report Date", "Weekly Ticket Target", "Extra Budget Needed"
-    ]].dropna(subset=["Target Tickets"]))
+        "SHOW", "Target Report Date", "Target Capacity (%)", "Target Tickets",
+        "Weekly Ticket Target", "Extra Budget Needed"
+    ]].dropna(subset=["Target Capacity (%)"]))
 else:
     st.info("Upload multiple PDF reports to get started.")
