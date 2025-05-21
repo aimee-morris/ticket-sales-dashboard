@@ -20,14 +20,15 @@ def extract_metrics_from_pdf(pdf, filename):
     data = {"SHOW": show_name}
 
     try:
-        total_tickets = re.search(r"Totals.*?\n(\d{1,3}(?:,\d{3})*)", text)
+        # Switch parsing for Venue Capacity and Cumulative Sold Tickets
+        venue_capacity = re.search(r"Totals.*?\n(\d{1,3}(?:,\d{3})*)", text)
+        total_tickets = re.search(r"Venue Capacity\s*\n(\d{1,3}(?:,\d{3})*)", text)
         gross = re.search(r"£\s*([\d,]+\.\d{2})", text)
-        venue_capacity = re.search(r"Venue Capacity\s*\n(\d{1,3}(?:,\d{3})*)", text)
         percent_match = re.search(r"(\d{1,2}\.\d{2})%", text)
 
+        data["Venue Capacity"] = int(venue_capacity.group(1).replace(",", "")) if venue_capacity else None
         data["Cumulative Sold Tickets"] = int(total_tickets.group(1).replace(",", "")) if total_tickets else None
         data["Cumulative Gross"] = float(gross.group(1).replace(",", "")) if gross else None
-        data["Venue Capacity"] = int(venue_capacity.group(1).replace(",", "")) if venue_capacity else None
         data["Capacity Reached (%)"] = float(percent_match.group(1)) if percent_match else None
 
         # Placeholder values for user input
