@@ -11,7 +11,6 @@ st.title("📄 Multi-Tour Ticket Sales Dashboard – PDF Reports")
 
 uploaded_files = st.file_uploader("Upload multiple tour report PDFs", type=["pdf"], accept_multiple_files=True)
 
-@st.cache_data
 def extract_metrics_from_pdf(pdf, filename):
     text = ""
     for page in pdf.pages:
@@ -45,9 +44,13 @@ def extract_metrics_from_pdf(pdf, filename):
 if uploaded_files:
     all_metrics = []
     for uploaded_file in uploaded_files:
-        pdf = PdfReader(uploaded_file)
-        metrics = extract_metrics_from_pdf(pdf, uploaded_file.name)
-        all_metrics.append(metrics)
+        filename = uploaded_file.name.encode('ascii', 'ignore').decode('ascii')
+        try:
+            pdf = PdfReader(uploaded_file)
+            metrics = extract_metrics_from_pdf(pdf, filename)
+            all_metrics.append(metrics)
+        except Exception as e:
+            st.error(f"Could not read {filename}: {e}")
 
     df = pd.DataFrame(all_metrics)
 
